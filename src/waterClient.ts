@@ -12,6 +12,6 @@ export default class WaterClient {
     }
 
     isOn() {
-        return this.read() === 1;
+        return this.read() === 0;
     }
 }
