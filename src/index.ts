@@ -1,5 +1,6 @@
 import PowerClient from "./powerClient";
 import Util from "./util";
+import WaterClient from "./waterClient";
 
 export type PowerState = "on" | "cutoff";
 
@@ -11,7 +12,7 @@ export const run = async () => {
     const waterGpio = 20;
 
     const powerClient = new PowerClient(powerGpio);
-    const waterClient = new PowerClient(waterGpio);
+    const waterClient = new WaterClient(waterGpio);
 
     let currentState = "on";
 
