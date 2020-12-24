@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "bin": {
+    "laundry-sensor": "./dist/cli.js"
+  },
   "scripts": {
     "build": "tsc",
     "start": "npm run build && node dist/index.js",
