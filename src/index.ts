@@ -27,11 +27,11 @@ export const run = async () => {
             powerClient.turnOff();
         }
 
-        if (waterClient.isOn()) {
+        if (currentState === "on" && waterClient.isOn()) {
             console.log("WATER DETECTED. VERIFYING...");
             let verified = true;
             for (let i = 0; i < 5; i++) {
-                Util.sleep(verifyInterval);
+                await Util.sleep(verifyInterval);
                 verified = verified && waterClient.isOn();
                 console.log(verified);
             }
@@ -45,7 +45,7 @@ export const run = async () => {
             }            
         }
 
-        Util.sleep(pollIntervalMs);
+        await Util.sleep(pollIntervalMs);
     }
 }
 
