@@ -12,8 +12,8 @@ class Main:
         self.pollIntervalSec = 0.5
         self.verifyIntervalSec = 0.1
     
-        self.powerGpio = 21
-        self.waterGpio = 20
+        self.powerGpio = 24
+        self.waterGpio = 23
 
         if platform == "win32" or platform == "win64":
             Device.pin_factory = MockFactory()           

@@ -1,5 +1,5 @@
 {
-  "name": "laundry-sensor",
+  "name": "@jonlabroad/laundry-sensor",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
