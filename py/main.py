@@ -31,6 +31,7 @@ class Main:
 
         self.currentState = "on"
         self.machineIsRunning = False
+        self.connected = False
         self.currentLastPollTime = 0
         self.numConsecutiveChanges = 0
 
@@ -44,9 +45,12 @@ class Main:
 
     async def run(self):
         print("Initializing...")
-        await self.kasaClient.discover()
-        await self.kasaClient.turnOn()
         self.powerClient.turnOn()
+        while(not self.connected):
+            time.sleep(5)
+            self.connected = await self.kasaClient.discover()
+        await self.kasaClient.turnOn()
+
         print("Running...")
         while (True):
             await self.pollPlug()

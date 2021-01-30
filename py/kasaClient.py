@@ -8,12 +8,15 @@ class KasaClient:
         self.currentThreshold = 20
 
     async def discover(self):
+        connected = False
         devices = await Discover.discover()
         for ipAddr, device in devices.items():
             if device.alias == self.deviceAlias:
                 print("Found device at " + ipAddr + ": " + device.alias)
                 self.device = SmartPlug(ipAddr)
+                connected = True
         print(devices)
+        return connected
 
     async def turnOn(self):
         await self.device.turn_on()
