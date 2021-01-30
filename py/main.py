@@ -72,8 +72,6 @@ class Main:
                     self.currentState = "cutoff"
                     await self.serverClient.triggerWaterDetectEvent()
 
-                    # TODO alert via AWS
-
             time.sleep(self.pollIntervalSec)
 
     async def pollPlug(self):

@@ -1,4 +1,4 @@
-import { CloudWatch } from "aws-sdk";
+import { CloudWatch, SNS } from "aws-sdk";
 
 'use strict';
 
@@ -14,6 +14,8 @@ interface PostInput {
   type: "STATUS" | "WATER_DETECTED" | "RESET" | "LAUNDRY_START" | "LAUNDRY_END"
   test: boolean
 }
+
+const snsArn = "arn:aws:sns:us-east-1:796987500533:WaterEventSMS";
 
 export const detect = async (event, context, callback) => {
   try {
@@ -76,30 +78,35 @@ export const detect = async (event, context, callback) => {
         ],
         Namespace: "LaundryWaterSensor1"
       };
-      console.log(params);
       const cloudwatch = new CloudWatch();
       response = await cloudwatch.putMetricData(params).promise();
+      if (!eventDataRaw.test) {
+        const sns = new SNS();
+        await sns.publish({
+          TopicArn: snsArn,
+          Message: `Water Detected: ${new Date().toISOString()}.\nTest=${eventDataRaw.test}`
+        }).promise();
+      }
     } else if (eventDataRaw.type === "LAUNDRY_END") {
-    const params = {
-      MetricData: [
-        {
-          MetricName: "LaundryEnd",
-          Timestamp: new Date(),
-          Value: 1,
-          Dimensions: [
-            {
-              Name: "test",
-              Value: eventDataRaw.test ? "1" : "0",
-            }
-          ]
-        }
-      ],
-      Namespace: "LaundryWaterSensor1"
-    };
-    console.log(params);
-    const cloudwatch = new CloudWatch();
-    response = await cloudwatch.putMetricData(params).promise();
-  }
+      const params = {
+        MetricData: [
+          {
+            MetricName: "LaundryEnd",
+            Timestamp: new Date(),
+            Value: 1,
+            Dimensions: [
+              {
+                Name: "test",
+                Value: eventDataRaw.test ? "1" : "0",
+              }
+            ]
+          }
+        ],
+        Namespace: "LaundryWaterSensor1"
+      };
+      const cloudwatch = new CloudWatch();
+      response = await cloudwatch.putMetricData(params).promise();
+    }
   } catch (err) {
     console.error(err);
     return {

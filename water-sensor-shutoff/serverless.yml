@@ -33,6 +33,7 @@ provider:
       Action:
         - 'cloudwatch:PutMetricAlarm'
         - 'cloudwatch:PutMetricData'
+        - 'sns:Publish'
       Resource:
         - "*"
 
@@ -80,9 +81,6 @@ custom:
 functions:
   hello:
     handler: handler.detect
-#    The following are a few example events you can configure
-#    NOTE: Please make sure to change your handler code to work with those events
-#    Check the event documentation for details
     events:
       - http:
           path: detect
@@ -121,8 +119,20 @@ functions:
 #      variable2: value2
 
 # you can add CloudFormation resource templates here
-#resources:
-#  Resources:
+resources:
+  Resources:
+    EventSNS:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: WaterEventSMS
+        DisplayName: Laundry
+    EventSMS:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Protocol: sms
+        Endpoint: +14135759837
+        TopicArn: !Ref 'EventSNS'
+   
 #    NewResource:
 #      Type: AWS::S3::Bucket
 #      Properties:
