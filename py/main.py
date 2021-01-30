@@ -1,27 +1,38 @@
 from sys import platform
+import asyncio
 from powerClient import PowerClient
 from waterClient import WaterClient
+from kasaClient import KasaClient
+from serverClient import ServerClient
 from gpiozero import Device
 from gpiozero.pins.mock import MockFactory
 from threading import Timer
+from datetime import datetime
 
 import time
 
 class Main:
     def __init__(self):
+        self.testMode = platform == "win32" or platform == "win64"
         self.pollIntervalSec = 0.5
         self.verifyIntervalSec = 0.1
+        self.currentPollIntervalSec = 10
     
         self.powerGpio = 24
         self.waterGpio = 23
 
         if platform == "win32" or platform == "win64":
-            Device.pin_factory = MockFactory()           
+            Device.pin_factory = MockFactory()
 
         self.powerClient = PowerClient(self.powerGpio)
         self.waterClient = WaterClient(self.waterGpio)
+        self.kasaClient = KasaClient("Laundry Machine")
+        self.serverClient = ServerClient(self.testMode)
 
         self.currentState = "on"
+        self.machineIsRunning = False
+        self.currentLastPollTime = 0
+        self.numConsecutiveChanges = 0
 
         if platform == "win32" or platform == "win64":
             self.powerPin = Device.pin_factory.pin(self.powerGpio)
@@ -31,10 +42,15 @@ class Main:
             t = Timer(5.0, self.setWaterPin, [0])
             t.start()
 
-    def run(self):
-        print("Running...")
+    async def run(self):
+        print("Initializing...")
+        await self.kasaClient.discover()
+        await self.kasaClient.turnOn()
         self.powerClient.turnOn()
+        print("Running...")
         while (True):
+            await self.pollPlug()
+
             if self.currentState == "on" and not self.powerClient.isOn():
                 print("TURNING ON")
                 self.powerClient.turnOn()
@@ -54,10 +70,28 @@ class Main:
                     print("SHUTTING OFF POWER")
                     self.powerClient.turnOff()
                     self.currentState = "cutoff"
+                    await self.serverClient.triggerWaterDetectEvent()
 
                     # TODO alert via AWS
 
             time.sleep(self.pollIntervalSec)
+
+    async def pollPlug(self):
+        currTime = datetime.now().timestamp()
+        if currTime - self.currentLastPollTime > self.currentPollIntervalSec:
+            self.currentLastPollTime = currTime
+            isRunning = await self.kasaClient.isRunning()
+            print(isRunning)
+            if self.machineIsRunning != isRunning:
+                self.numConsecutiveChanges = self.numConsecutiveChanges + 1
+                if self.numConsecutiveChanges == 5:
+                    self.machineIsRunning = isRunning
+                    if self.machineIsRunning:
+                        await self.serverClient.triggerLaundryOnEvent()
+                    else:
+                        await self.serverClient.triggerLaundryOffEvent()
+            else:
+                self.numConsecutiveChanges = 0
 
     def setWaterPin(self, val):
         if val == 0:
@@ -65,4 +99,4 @@ class Main:
         else:
             self.waterPin.drive_high()
 
-Main().run()
+asyncio.run(Main().run())
